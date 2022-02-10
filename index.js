@@ -32,7 +32,13 @@ function setData(data) {
     li.innerHTML = `<div>
           <h6 class="title ${todo.completed ? "completed" : ""}">${
       todo.name
-    }<span class="ml-2 ">${priority}</span></h6>
+    }<span class="ml-2 badge ${
+      priority === "high"
+        ? "badge-danger"
+        : priority === "medium"
+        ? "badge-warning"
+        : "badge-info"
+    }">${priority}</span></h6>
           <p class="description">${todo.description}</p>
                     </div>
                     <div>
@@ -65,63 +71,106 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // console.log(name, priority, description)
 
-    if(name === null || priority === null || description === null){
-        alert("fill all data")
-    }else{
-        let response =  await addTodo({name, priority, description})
-        // console.log(response)
-        data.push(response)
-        setData(data)
+    if (name === null || priority === null || description === null) {
+      alert("fill all data");
+    } else {
+      let response = await addTodo({ name, priority, description });
+      // console.log(response)
+      data.push(response);
+      setData(data);
     }
-
-    
-  }
+  };
 
   const todoItem = document.querySelector("#lecture-list ul");
-    todoItem.addEventListener("click", (e) => {
-      console.log(e.target.classList.value )
+  // const li = document.createElement("li");
 
-      if(e.target.classList.value === "btn btn-danger" || e.target.classList.value === "far fa-trash-alt" ){
-          let todoId = e.target.parentElement.parentElement.id;
-        
-        //   console.log(todoId)
-          let response =  deleteTodo(todoId)
-          let index = data.findIndex(item => {
-              return item._id == response.id
+ 
 
-          } )
-          data.splice(index, 1)
-          setData(data)
+  todoItem.addEventListener("click", async (e) => {
+    console.log(e.target.classList.value);
+
+    if (
+      e.target.classList.value === "btn btn-danger" ||
+      e.target.classList.value === "far fa-trash-alt"
+    ) {
+      let todoId;
+      if (e.target.parentElement.parentElement.id.length !== 0) {
+        todoId = e.target.parentElement.parentElement.id;
+      } else {
+        todoId = e.target.parentElement.parentElement.parentElement.id;
       }
+      //   console.log(todoId)
+      try {
+        let response = deleteTodo(todoId);
+      let index = data.findIndex((item) => {
+        return item._id == response.id;
+      });
+      data.splice(index, 1);
+      setData(data);
+      } catch (error) {
+        
+      }
+      
+    } else if (
+      e.target.classList.value === "btn btn-success" ||
+      e.target.classList.value === "fas fa-check"
+    ) {
+      let todoId;
+      if (e.target.parentElement.parentElement.id.length !== 0) {
+        todoId = e.target.parentElement.parentElement.id;
+      } else {
+        todoId = e.target.parentElement.parentElement.parentElement.id;
+      }
+      let dataIndex = data.findIndex((item) => item._id == todoId);
+      let updateData = data[dataIndex];
+      updateData.completed = true;
+      try {
+        await updateMethod(updateData);
+        data[dataIndex] = updateData;
+        setData(data)
+      } catch (error) {}
+    }
   });
 
-
-
-   addTodo = async (fromData) => {
-       
-     return  await fetch('https://infodev-server.herokuapp.com/api/todos', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(fromData)
-      }).then((response) => response.json())
+  updateMethod = async (updateData) => {
+    return await fetch(
+      `https://infodev-server.herokuapp.com/api/todos/${updateData._id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      }
+    )
+      .then((response) => response.json())
       .then((data) => {
         return data;
       });
+  };
 
-  }
+  addTodo = async (fromData) => {
+    return await fetch("https://infodev-server.herokuapp.com/api/todos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(fromData),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        return data;
+      });
+  };
 
   deleteTodo = async (id) => {
-      return await fetch(`https://infodev-server.herokuapp.com/api/todos/${id}`,{
-          method: 'DELETE'
-
-      }).then((response) => response.json())
+    return await fetch(`https://infodev-server.herokuapp.com/api/todos/${id}`, {
+      method: "DELETE",
+    })
+      .then((response) => response.json())
       .then((data) => {
         return data;
       });
-  }
-
-  
+  };
 
 });
